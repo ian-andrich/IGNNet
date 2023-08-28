@@ -1,2 +1,4 @@
 black
-pyflake
+flake8
+flake8-black
+pyproject-flake8
