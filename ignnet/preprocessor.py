@@ -1,5 +1,6 @@
 import torch
 import pandas as pd
+from torch.utils.data import TensorDataset, DataLoader
 
 
 class PreProcessor(object):
@@ -11,8 +12,8 @@ class PreProcessor(object):
 
     def __init__(
         self,
-        X: torch.Tensor,
-        y: torch.Tensor,
+        X: DataLoader,
+        y: DataLoader,
         num_nodes: int,
         adj_matrix: torch.Tensor,
         edge_list: torch.Tensor,
@@ -39,11 +40,11 @@ class PreProcessor(object):
         """
         Assumes the X is all numerical.
         """
-        X_ = torch.Tensor(X.values)
+        X_ = DataLoader(TensorDataset(torch.Tensor(X.values)))
         if auto_coerce_y:
-            y_ = torch.tensor(y.map(int).values)
+            y_ = DataLoader(TensorDataset(torch.tensor(y.map(int).values)))
         else:
-            y_ = torch.Tensor(y.values)
+            y_ = DataLoader(TensorDataset(torch.Tensor(y.values)))
         correlation_matrix = torch.from_numpy(X.corr().values).to(device=device)
         num_nodes = len(X.columns)
         num_classes = len(y.map(int).unique())  # type:ignore
