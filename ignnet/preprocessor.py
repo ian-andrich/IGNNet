@@ -1,6 +1,6 @@
 import torch
 import pandas as pd
-from torch.utils.data import TensorDataset, DataLoader
+from torch.utils.data import TensorDataset
 
 
 class PreProcessor(object):
