@@ -9,7 +9,7 @@ class PreProcessor(object):
         adj_matrix: torch.Tensor,
         edge_list: torch.Tensor,
         num_classes: int,
-        device="cuda",
+        device: str = "cuda",
     ):
         self.num_nodes = num_nodes
         self.adj_matrix = adj_matrix
@@ -22,20 +22,36 @@ class PreProcessor(object):
         cls,
         X: pd.DataFrame,
         y: pd.DataFrame,
-        corr_threshold: float = 0.2,
         auto_corr_val: float = 0.7,
         device="cuda",
     ):
         correlation_matrix = torch.from_numpy(X.corr().values).to(device=device)
         num_nodes = len(X.columns)
         num_classes = len(y.unique())  # type:ignore
-        edge_list, adj_mat = cls._corr_mat_data(
+        edge_list, adj_mat = cls._auto_corr_mat_data(
             correlation_matrix,
-            corr_threshold=corr_threshold,
-            auto_corr_val=auto_corr_val,
+            auto_corr_val,
             device=device,
         )  # Is this the right correlation?  Takes values in [0, 1]
         return cls(num_nodes, adj_mat, edge_list, num_classes, device=device)
+
+    @classmethod
+    def _auto_corr_mat_data(
+        cls, corr_matrix: torch.Tensor, auto_corr_val: float = 0.7, device="cuda"
+    ):
+        for corr_threshold in [0.2, 0.1, 0.05, -0.01]:
+            try:
+                return cls._corr_mat_data(
+                    corr_matrix,
+                    corr_threshold,
+                    auto_corr_val=auto_corr_val,
+                    device=device,
+                )
+
+            except ValueError:
+                pass
+
+        raise ValueError("Should be unreachable")
 
     @staticmethod
     def _corr_mat_data(
