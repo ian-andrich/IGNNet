@@ -5,12 +5,16 @@ import pandas as pd
 class PreProcessor(object):
     def __init__(
         self,
+        X: torch.Tensor,
+        y: torch.Tensor,
         num_nodes: int,
         adj_matrix: torch.Tensor,
         edge_list: torch.Tensor,
         num_classes: int,
         device: str = "cuda",
     ):
+        self.X = X
+        self.y = y
         self.num_nodes = num_nodes
         self.adj_matrix = adj_matrix
         self.edge_list = edge_list
@@ -21,19 +25,21 @@ class PreProcessor(object):
     def from_dataframe(
         cls,
         X: pd.DataFrame,
-        y: pd.DataFrame,
+        y: pd.Series,
         auto_corr_val: float = 0.7,
         device="cuda",
     ):
+        X_ = torch.Tensor(X.values)
+        y_ = torch.Tensor(y.values)
         correlation_matrix = torch.from_numpy(X.corr().values).to(device=device)
         num_nodes = len(X.columns)
-        num_classes = len(y.unique())  # type:ignore
+        num_classes = len(y.map(int).unique())  # type:ignore
         edge_list, adj_mat = cls._auto_corr_mat_data(
             correlation_matrix,
             auto_corr_val,
             device=device,
         )  # Is this the right correlation?  Takes values in [0, 1]
-        return cls(num_nodes, adj_mat, edge_list, num_classes, device=device)
+        return cls(X_, y_, num_nodes, adj_mat, edge_list, num_classes, device=device)
 
     @classmethod
     def _auto_corr_mat_data(
