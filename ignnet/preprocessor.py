@@ -3,6 +3,12 @@ import pandas as pd
 
 
 class PreProcessor(object):
+    """
+    The model requires preprocessing in order to instantiate -- it requires the
+    correlation matrix in order to be defined.  Further helper methods are provided
+    in order to facilitate the ease of preparing the data
+    """
+
     def __init__(
         self,
         X: torch.Tensor,
@@ -28,9 +34,16 @@ class PreProcessor(object):
         y: pd.Series,
         auto_corr_val: float = 0.7,
         device="cuda",
+        auto_coerce_y=True,
     ):
+        """
+        Assumes the X is all numerical.
+        """
         X_ = torch.Tensor(X.values)
-        y_ = torch.Tensor(y.values)
+        if auto_coerce_y:
+            y_ = torch.tensor(y.map(int).values)
+        else:
+            y_ = torch.Tensor(y.values)
         correlation_matrix = torch.from_numpy(X.corr().values).to(device=device)
         num_nodes = len(X.columns)
         num_classes = len(y.map(int).unique())  # type:ignore
