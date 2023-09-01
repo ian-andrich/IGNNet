@@ -31,7 +31,7 @@ class IGNNetDefaultModel(torch.nn.Module):
         self.lvnth = Linear(1280, 256, bias=False, device=device)
         self.twlth = BatchNorm1d(256, device=device)
         self.thrtnth = FeedForwardPart(576, 1, device=device)
-        self.final = Linear(1, 1, bias=False, device=device)
+        self.final = Linear(num_features, num_features, bias=True, device=device)
         self.final_ = Softmax()
 
     def forward(self, x: torch.Tensor, batch_size=8):
