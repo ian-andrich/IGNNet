@@ -24,7 +24,7 @@ class PreProcessor(object):
         self.adj_matrix = adj_matrix
         self.edge_list = edge_list
         self.num_classes = num_classes
-        self._device = device
+        self.device = device
 
     @classmethod
     def from_dataframe(
@@ -44,7 +44,7 @@ class PreProcessor(object):
         else:
             y_ = torch.Tensor(y.values)
         dataset = TensorDataset(X_, y_)
-        correlation_matrix = torch.from_numpy(X.corr().values).to(device=device)
+        correlation_matrix = torch.from_numpy(X.corr().values).to(device)
         num_nodes = len(X.columns)
         num_classes = len(y.map(int).unique())  # type:ignore
         edge_list, adj_mat = cls._auto_corr_mat_data(
@@ -91,7 +91,7 @@ class PreProcessor(object):
         ).bool()
         filtered_corr_matrix = torch.where(
             eye_mask,
-            torch.full_like(corr_matrix, auto_corr_val, device=device),
+            torch.full_like(corr_matrix, auto_corr_val).to(device),
             filtered_corr_matrix,
         )
         if (filtered_corr_matrix > corr_threshold).sum() == filtered_corr_matrix.shape[
@@ -102,5 +102,7 @@ class PreProcessor(object):
             )
             raise ValueError(msg)
 
-        edge_list = filtered_corr_matrix.nonzero(as_tuple=False)
+        edge_list = (
+            filtered_corr_matrix.nonzero(as_tuple=False).transpose(0, 1).to(device)
+        )
         return (edge_list, filtered_corr_matrix)
