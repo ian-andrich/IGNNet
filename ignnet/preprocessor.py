@@ -12,16 +12,14 @@ class PreProcessor(object):
 
     def __init__(
         self,
-        X: TensorDataset,
-        y: TensorDataset,
+        dataset: TensorDataset,
         num_nodes: int,
         adj_matrix: torch.Tensor,
         edge_list: torch.Tensor,
         num_classes: int,
         device: str = "cuda",
     ):
-        self.X = X
-        self.y = y
+        self.dataset = dataset
         self.num_nodes = num_nodes
         self.adj_matrix = adj_matrix
         self.edge_list = edge_list
@@ -40,11 +38,12 @@ class PreProcessor(object):
         """
         Assumes the X is all numerical.
         """
-        X_ = TensorDataset(torch.Tensor(X.values))
+        X_ = torch.Tensor(X.values)
         if auto_coerce_y:
-            y_ = TensorDataset(torch.tensor(y.map(int).values))
+            y_ = torch.tensor(y.map(int).values)
         else:
-            y_ = TensorDataset(torch.Tensor(y.values))
+            y_ = torch.Tensor(y.values)
+        dataset = TensorDataset(X_, y_)
         correlation_matrix = torch.from_numpy(X.corr().values).to(device=device)
         num_nodes = len(X.columns)
         num_classes = len(y.map(int).unique())  # type:ignore
@@ -53,7 +52,7 @@ class PreProcessor(object):
             auto_corr_val,
             device=device,
         )  # Is this the right correlation?  Takes values in [0, 1]
-        return cls(X_, y_, num_nodes, adj_mat, edge_list, num_classes, device=device)
+        return cls(dataset, num_nodes, adj_mat, edge_list, num_classes, device=device)
 
     @classmethod
     def _auto_corr_mat_data(
