@@ -88,6 +88,7 @@ class FeedForwardPart(torch.nn.Module):
             next_out_size = int(max(next_out_size / 2, out_channels - 1))
         mods.append(Linear(2, 1, device=device))
         self.mods = mods
+        self._mods = torch.nn.ModuleList(mods)
 
     def forward(self, x):
         for mod in self.mods:
