@@ -1,5 +1,5 @@
 import torch
-from torch.nn import Linear, Parameter, BatchNorm1d
+from torch.nn import Linear, Parameter
 from torch_geometric.nn import MessagePassing
 from torch_geometric.utils import add_self_loops, degree
 
@@ -46,7 +46,9 @@ class IGNNetMPL(MessagePassing):
         # Step 6: Apply a final bias vector.
         out += self.bias
 
-        return self.activation(out)
+        result = self.activation(out)
+        result[result == float("nan")] = 0
+        return result
 
 
 class GCNConv(MessagePassing):
@@ -124,21 +126,16 @@ class FeedForwardPart(torch.nn.Module):
     def __init__(self, in_channels: int, out_channels: int, device="cuda"):
         super().__init__()
 
-        mods = []
-        in_chans = in_channels
-        next_out_size = int(
-            2 ** torch.Tensor([in_channels]).log2().floor().int()[0].item()
-        )
-
-        while next_out_size > out_channels:
-            linear_layer = Linear(in_chans, next_out_size, bias=False, device=device)
-            mods.append(linear_layer)
-
-            in_chans = next_out_size
-            next_out_size = int(max(next_out_size / 2, out_channels - 1))
-        mods.append(Linear(2, 1, bias=False, device=device))
-        self.mods = mods
-        self._mods = torch.nn.ModuleList(mods)
+        self.mods = [
+            Linear(in_channels, 64, device=device, bias=False),
+            Linear(64, 32, device=device, bias=False),
+            Linear(32, 16, device=device, bias=False),
+            Linear(16, 8, device=device, bias=False),
+            Linear(8, 4, device=device, bias=False),
+            Linear(4, 2, device=device, bias=False),
+            Linear(2, 1, device=device, bias=False),
+        ]
+        self._mods = torch.nn.ModuleList(self.mods)
 
     def forward(self, x):
         for mod in self.mods:

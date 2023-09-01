@@ -17,6 +17,7 @@ class IGNNetDefaultModel(torch.nn.Module):
         self.edge_index = edge_index
         self.num_features = num_features
         self.num_classes = num_classes
+        self.normalize_input = BatchNorm1d(num_features)
         self.fst = Linear(1, 64, bias=False, device=device)
         self.snd = GreenBlock(64, adj_mat, device=device)
         self.thrd = GreenBlock(128, adj_mat, device=device)
@@ -31,7 +32,7 @@ class IGNNetDefaultModel(torch.nn.Module):
         self.lvnth = Linear(1280, 256, bias=False, device=device)
         self.twlth = BatchNorm1d(256, device=device)
         self.thrtnth = FeedForwardPart(576, 1, device=device)
-        self.final = Linear(1, 1, device=device)
+        self.final = Linear(1, 1, bias=False, device=device)
         self.final_ = Softmax()
 
     def forward(self, x: torch.Tensor, batch_size=8):
@@ -62,9 +63,9 @@ class IGNNetDefaultModel(torch.nn.Module):
         )
 
         last = torch.cat([skip_3, skip_2, skip_1], dim=2)
-        return last
         last = self.thrtnth(last)
-        return self.final_(self.final(last).reshape(batch_size, self.num_features))
+        last = self.final(last).reshape(batch_size, self.num_features)
+        return self.final_(last)
 
     @classmethod
     def from_preprocessor(cls, preprocessor: PreProcessor):

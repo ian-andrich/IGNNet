@@ -38,21 +38,36 @@ class PreProcessor(object):
         """
         Assumes the X is all numerical.
         """
-        X_ = torch.Tensor(X.values)
+        # X_normalized = X.apply(lambda x: ((x - x.mean()) / x.std()))
+        # Not sure if I should batch normalize the input or not
+        X_ = torch.Tensor(X.values).to(device)
         if auto_coerce_y:
-            y_ = torch.tensor(y.map(int).values)
+            try:
+                y_ = torch.Tensor(y.map(int).values).to(device)
+            except Exception:
+                mapper = {val: count for count, val in enumerate(y.unique())}
+                y_ = torch.Tensor(y.map(mapper)).to(device)
+
         else:
-            y_ = torch.Tensor(y.values)
+            y_ = torch.Tensor(y.values).to(device)
         dataset = TensorDataset(X_, y_)
         correlation_matrix = torch.from_numpy(X.corr().values).to(device)
         num_nodes = len(X.columns)
-        num_classes = len(y.map(int).unique())  # type:ignore
+        num_classes = len(y.unique())  # type:ignore
         edge_list, adj_mat = cls._auto_corr_mat_data(
             correlation_matrix,
             auto_corr_val,
             device=device,
         )  # Is this the right correlation?  Takes values in [0, 1]
-        return cls(dataset, num_nodes, adj_mat, edge_list, num_classes, device=device)
+
+        return cls(
+            dataset,
+            num_nodes,
+            adj_mat,
+            edge_list,
+            num_classes,
+            device=device,
+        )
 
     @classmethod
     def _auto_corr_mat_data(
