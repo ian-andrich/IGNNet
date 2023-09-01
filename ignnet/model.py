@@ -17,7 +17,6 @@ class IGNNetDefaultModel(torch.nn.Module):
         self.edge_index = edge_index
         self.num_features = num_features
         self.num_classes = num_classes
-        self.normalize_input = BatchNorm1d(num_features)
         self.fst = Linear(1, 64, bias=False, device=device)
         self.snd = GreenBlock(64, adj_mat, device=device)
         self.thrd = GreenBlock(128, adj_mat, device=device)
