@@ -1,5 +1,5 @@
 import torch
-from torch.nn import Linear, Parameter
+from torch.nn import Linear, Parameter, Sigmoid
 from torch_geometric.nn import MessagePassing
 from torch_geometric.utils import add_self_loops, degree
 
@@ -16,7 +16,7 @@ class IGNNetMPL(MessagePassing):
         super().__init__(aggr=aggr, device=device)
         self._adj_mat = adj_mat
         self.lin = Linear(in_channels, out_channels, bias=False, device=device)
-        self.activation = torch.nn.ReLU()
+        self.activation = Sigmoid()
         self.bias = Parameter(torch.empty(out_channels, device=device))
 
     def reset_parameters(self):
