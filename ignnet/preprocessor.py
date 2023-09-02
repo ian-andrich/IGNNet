@@ -43,13 +43,13 @@ class PreProcessor(object):
         X_ = torch.Tensor(X.values).to(device)
         if auto_coerce_y:
             try:
-                y_ = torch.Tensor(y.map(int).values).to(device)
+                y_ = torch.Tensor(y.map(int).values).to(device).long()
             except Exception:
                 mapper = {val: count for count, val in enumerate(y.unique())}
-                y_ = torch.Tensor(y.map(mapper)).to(device)
+                y_ = torch.Tensor(y.map(mapper)).to(device).long()
 
         else:
-            y_ = torch.Tensor(y.values).to(device)
+            y_ = torch.Tensor(y.values).to(device).long()
         dataset = TensorDataset(X_, y_)
         correlation_matrix = torch.from_numpy(X.corr().values).to(device)
         num_nodes = len(X.columns)

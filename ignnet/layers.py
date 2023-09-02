@@ -1,6 +1,7 @@
 import torch
 from torch.nn import Linear, Parameter, Sigmoid
 from torch_geometric.nn import MessagePassing
+from torch_geometric.utils import dense_to_sparse
 from torch_geometric.utils import add_self_loops, degree
 
 
@@ -14,21 +15,22 @@ class IGNNetMPL(MessagePassing):
         device="cuda",
     ):
         super().__init__(aggr=aggr, device=device)
+        self.edge_index, self.edge_weights = dense_to_sparse(adj_mat)
         self._adj_mat = adj_mat
         self.lin = Linear(in_channels, out_channels, bias=False, device=device)
         self.activation = Sigmoid()
-        self.bias = Parameter(torch.empty(out_channels, device=device))
+        # self.bias = Parameter(torch.empty(out_channels, device=device))
 
     def reset_parameters(self):
         self.lin.reset_parameters()
-        self.bias.data.zero_()
+        # self.bias.data.zero_()
 
-    def forward(self, x, edge_index):
+    def forward(self, x):
         # x has shape [N, in_channels]
         # edge_index has shape [2, E]
 
         # Step 1: Add self-loops to the adjacency matrix.
-        edge_index, _ = add_self_loops(edge_index, num_nodes=x.size(1))
+        edge_index, _ = add_self_loops(self.edge_index, num_nodes=x.size(1))
 
         # Step 2: Linearly transform node feature matrix.
         x = self.lin(x)
@@ -38,16 +40,14 @@ class IGNNetMPL(MessagePassing):
         deg = degree(col, x.size(1))
         deg_inv_sqrt = deg.pow(-0.5)
         deg_inv_sqrt[deg_inv_sqrt == float("inf")] = 0
-        norm = deg_inv_sqrt[row] * deg_inv_sqrt[col]
-
+        norm = deg_inv_sqrt[row] * deg_inv_sqrt[col] * self._adj_mat[row, col]
         # Step 4-5: Start propagating messages.
         out = self.propagate(edge_index, x=x, norm=norm)
 
         # Step 6: Apply a final bias vector.
-        out += self.bias
+        # out += self.bias
 
         result = self.activation(out)
-        result[result == float("nan")] = 0
         return result
 
 
@@ -112,8 +112,8 @@ class GreenBlock(torch.nn.Module):
         )
         self.relu = torch.nn.ReLU()
 
-    def forward(self, x, edge_index):
-        fst = self.mpl(x, edge_index)
+    def forward(self, x):
+        fst = self.mpl(x)
         upper = self.upper_2(self.upper_1(fst))
         lower = self.lower_2(self.lower_1(fst))
         combined = torch.cat([upper, lower], dim=2)

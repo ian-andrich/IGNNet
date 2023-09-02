@@ -31,30 +31,29 @@ class IGNNetDefaultModel(torch.nn.Module):
         self.lvnth = Linear(1280, 256, bias=False, device=device)
         self.twlth = BatchNorm1d(256, device=device)
         self.thrtnth = FeedForwardPart(576, 1, device=device)
-        self.final = Linear(num_features, num_features, bias=True, device=device)
-        self.final_ = Softmax()
+        self.final = Linear(num_features, num_classes, bias=False, device=device)
+        self.final_ = Softmax(dim=1)
 
     def forward(self, x: torch.Tensor, batch_size=8):
-        edge_index = self.edge_index
         skip_1 = self.fst(x)
 
-        skip_2 = self.snd(skip_1, edge_index=edge_index)
-        skip_2 = self.thrd(skip_2, edge_index=edge_index)
-        skip_2 = self.thrd_(skip_2, edge_index=edge_index)
-        skip_2 = self.frth(skip_2, edge_index=edge_index)
+        skip_2 = self.snd(skip_1)
+        skip_2 = self.thrd(skip_2)
+        skip_2 = self.thrd_(skip_2)
+        skip_2 = self.frth(skip_2)
         skip_2 = torch.cat([skip_1, skip_2], dim=2)
         skip_2 = self.ffth(skip_2)
         skip_2 = torch.cat([self.sxth(x) for x in skip_2], dim=0).reshape(
             batch_size, self.num_features, 256
         )
 
-        skip_3 = self.svth(skip_2, edge_index)
+        skip_3 = self.svth(skip_2)
         skip_3 = torch.cat([self.eighth(x) for x in skip_3], dim=0).reshape(
             batch_size, self.num_features, 512
         )
 
-        skip_3 = self.nnth(skip_3, edge_index)
-        skip_3 = self.tnth(skip_3, edge_index)
+        skip_3 = self.nnth(skip_3)
+        skip_3 = self.tnth(skip_3)
         skip_3 = torch.cat([skip_3, skip_2], dim=2)
         skip_3 = self.lvnth(skip_3)
         skip_3 = torch.cat([self.twlth(x) for x in skip_3], dim=0).reshape(
@@ -63,7 +62,7 @@ class IGNNetDefaultModel(torch.nn.Module):
 
         last = torch.cat([skip_3, skip_2, skip_1], dim=2)
         last = self.thrtnth(last)
-        last = self.final(last).reshape(batch_size, self.num_features)
+        last = self.final(last.reshape(batch_size, self.num_features))
         return self.final_(last)
 
     @classmethod
