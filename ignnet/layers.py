@@ -127,7 +127,9 @@ class FeedForwardPart(torch.nn.Module):
         super().__init__()
 
         self.mods = [
-            Linear(in_channels, 64, device=device, bias=False),
+            Linear(in_channels, 256, device=device, bias=False),
+            Linear(256, 128, device=device, bias=False),
+            Linear(128, 64, device=device, bias=False),
             Linear(64, 32, device=device, bias=False),
             Linear(32, 16, device=device, bias=False),
             Linear(16, 8, device=device, bias=False),
