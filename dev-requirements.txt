@@ -4,3 +4,4 @@ flake8-black
 pyproject-flake8
 click
 openml
+bayesian-optimization
